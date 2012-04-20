@@ -59,12 +59,13 @@ backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
 			snprintf(buf + len, sizeof(buf) - len, "+0x%lx",
 			    (unsigned long)off);
 		}
-		printf (" %0lx %s (sp=%016lx)\n", (long)ip, buf, (long)sp);
+		printf (" 0x%0lx %s (sp=0x%0lx)\n", (long)ip, buf, (long)sp);
 
 		ret = unw_step(&c);
 		if (ret < 0) {
 			unw_get_reg(&c, UNW_REG_IP, &ip);
-			errx(1, "unw_step() error for ip %lx/start ip %lx, %s",
+			errx(1,
+			    "unw_step() error for ip %0lx/start ip %0lx, %s",
 			    (long)ip, (long)start_ip, unw_strerror(ret));
 		}
 	} while (ret > 0);
