@@ -41,10 +41,11 @@ backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
 			start_ip = ip;
 
 		buf[0] = '\0';
-		ret = unw_get_proc_name(&c, buf, sizeof (buf), &off);
-		if (ret < 0)
-			errx(1, "unw_get_proc_name failed, %s",
-			    unw_strerror(ret));
+		ret = unw_get_proc_name(&c, buf, sizeof(buf), &off);
+		if (ret < 0) {
+			strcpy(buf, "<unknown>");
+			off = 0;
+		}
 		if (off != 0) {
 			len = strlen(buf);
 			if (len >= sizeof(buf) - 32)
