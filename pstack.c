@@ -1,5 +1,7 @@
 #include <sys/types.h>
 #include <sys/ptrace.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
 #include <sys/wait.h>
 #include <assert.h>
 #include <err.h>
@@ -12,6 +14,10 @@
 #include <libunwind.h>
 #include <libunwind-ptrace.h>
 
+#ifndef KERN_PROC_OSREL
+#define	KERN_PROC_OSREL	40
+#endif
+
 static void
 backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
 {
@@ -21,7 +27,7 @@ backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
 	size_t len;
 	int n, ret;
 
-	printf("Thread %d\n", lwpid);
+	printf("Thread %d:\n", lwpid);
 	ret = unw_init_remote(&c, as, ui);
 	if (ret < 0)
 		errx(1, "unw_init_remote() failed, %s", unw_strerror(ret));
@@ -43,7 +49,7 @@ backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
 		buf[0] = '\0';
 		ret = unw_get_proc_name(&c, buf, sizeof(buf), &off);
 		if (ret < 0) {
-			strcpy(buf, "<unknown>");
+			strcpy(buf, "????????");
 			off = 0;
 		}
 		if (off != 0) {
@@ -53,7 +59,7 @@ backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
 			snprintf(buf + len, sizeof(buf) - len, "+0x%lx",
 			    (unsigned long)off);
 		}
-		printf ("%016lx %-32s (sp=%016lx)\n", (long)ip, buf, (long)sp);
+		printf (" %0lx %s (sp=%016lx)\n", (long)ip, buf, (long)sp);
 
 		ret = unw_step(&c);
 		if (ret < 0) {
@@ -62,6 +68,33 @@ backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
 			    (long)ip, (long)start_ip, unw_strerror(ret));
 		}
 	} while (ret > 0);
+}
+
+static void
+pid_proc_info(pid_t pid)
+{
+	char path[PATH_MAX];
+	int error, mib[4], osrel;
+	size_t len;
+
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC;
+	mib[2] = KERN_PROC_PATHNAME;
+	mib[3] = pid;
+
+	len = sizeof(path);
+	error = sysctl(mib, 4, path, &len, NULL, 0);
+	if (error == -1)
+		strcpy(path, "????????");
+
+	mib[2] = KERN_PROC_OSREL;
+
+	len = sizeof(osrel);
+	error = sysctl(mib, 4, &osrel, &len, NULL, 0);
+	if (error == -1)
+		osrel = 0;
+
+	printf("%d: %s (osrel %d)\n", pid, path, osrel);
 }
 
 static void
@@ -79,6 +112,8 @@ backtrace_proc(pid_t pid)
 	if (error == -1)
 		err(1, "Error waiting for attach to pid %d", pid);
 	assert(error == pid);
+
+	pid_proc_info(pid);
 
 	error = ptrace(PT_GETNUMLWPS, pid, NULL, 0);
 	if (error == -1) {
