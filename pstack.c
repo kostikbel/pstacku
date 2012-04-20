@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/ptrace.h>
+#include <sys/wait.h>
 #include <assert.h>
 #include <err.h>
 #include <errno.h>
@@ -68,11 +69,16 @@ backtrace_proc(pid_t pid)
 	lwpid_t *lwpids;
 	unw_addr_space_t as;
 	struct UPT_info *ui;
-	int error, i, lwpnums;
+	int error, i, lwpnums, status;
 
 	error = ptrace(PT_ATTACH, pid, NULL, 0);
 	if (error == -1)
 		err(1, "Error attaching to pid %d", pid);
+	error = waitpid(pid, &status, WSTOPPED);
+	if (error == -1)
+		err(1, "Error waiting for attach to pid %d", pid);
+	assert(error == pid);
+
 	error = ptrace(PT_GETNUMLWPS, pid, NULL, 0);
 	if (error == -1) {
 		error = errno;
