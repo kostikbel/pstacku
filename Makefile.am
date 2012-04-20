@@ -3,4 +3,6 @@ ACLOCAL_AMFLAGS = -I m4
 bin_PROGRAMS = pstack
 
 pstack_SOURCES = pstack.c
-pstack_LDADD = -lunwind -lunwind-ptrace -lunwind-generic
+
+AM_CPPFLAGS = -I @LIBUNWIND@/include
+pstack_LDADD = -L@LIBUNWIND@/lib -lunwind -lunwind-ptrace -lunwind-generic
