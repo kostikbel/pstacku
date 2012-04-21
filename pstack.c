@@ -18,6 +18,7 @@
 #define	KERN_PROC_OSREL	40
 #endif
 
+static int frame_count = -1;
 static int show_obj;
 static int show_obj_full;
 static int show_susp_time;
@@ -75,6 +76,9 @@ backtrace_lwp(unw_addr_space_t as, void *ui, int pid, lwpid_t lwpid)
 	n = 0;
 	start_ip = 0; /* shut down compiler */
 	do {
+		if (frame_count >= 0 && n >= frame_count)
+			break;
+
 		ret = unw_get_reg(&c, UNW_REG_IP, &ip);
 		if (ret < 0) {
 			if (verbose) {
@@ -229,7 +233,7 @@ static void
 usage(void)
 {
 
-	errx(2, "usage: pstack [-o] [-O] [-t] [-v] pid");
+	errx(2, "usage: pstack [-f frame_count] [-o] [-O] [-t] [-v] pid");
 }
 
 int
@@ -237,8 +241,11 @@ main(int argc, char **argv)
 {
 	int c, target_pid;
 
-	while ((c = getopt(argc, argv, "oOt")) != -1) {
+	while ((c = getopt(argc, argv, "f:oOt")) != -1) {
 		switch (c) {
+		case 'f':
+			frame_count = atoi(optarg);
+			break;
 		case 'o':
 			show_obj = 1;
 			show_obj_full = 0;
