@@ -64,7 +64,7 @@ backtrace_lwp(unw_addr_space_t as, void *ui, int pid, lwpid_t lwpid)
 	unw_cursor_t c;
 	unw_word_t arg, ip, start_ip, off;
 	size_t len;
-	int n, ret;
+	int i, frame_no, ret;
 
 	printf("Thread %d:\n", lwpid);
 	ret = unw_init_remote(&c, as, ui);
@@ -76,10 +76,10 @@ backtrace_lwp(unw_addr_space_t as, void *ui, int pid, lwpid_t lwpid)
 		return;
 	}
 
-	n = 0;
+	frame_no = 0;
 	start_ip = 0; /* shut down compiler */
 	do {
-		if (frame_count >= 0 && n >= frame_count)
+		if (frame_count >= 0 && frame_no >= frame_count)
 			break;
 
 		ret = unw_get_reg(&c, UNW_REG_IP, &ip);
@@ -90,7 +90,7 @@ backtrace_lwp(unw_addr_space_t as, void *ui, int pid, lwpid_t lwpid)
 			}
 			return;
 		}
-		if (n == 0)
+		if (frame_no == 0)
 			start_ip = ip;
 
 		buf[0] = '\0';
@@ -123,39 +123,13 @@ backtrace_lwp(unw_addr_space_t as, void *ui, int pid, lwpid_t lwpid)
 		}
 		if (arg_count > 0) {
 			printf("(");
-			if (pstack_get_arg0(&c, &arg))
-				printf("0x%lx", arg);
-			else
-				printf("??");
-			if (arg_count > 1) {
-				if (pstack_get_arg1(&c, &arg))
-					printf(", 0x%lx", arg);
+			for (i = 0; i < arg_count; i++) {
+				if (i > 0)
+					printf(", ");
+				if (pstack_get_arg(as, ui, &c, i, &arg))
+					printf("0x%lx", (long)arg);
 				else
-					printf(", ??");
-			}
-			if (arg_count > 2) {
-				if (pstack_get_arg2(&c, &arg))
-					printf(", 0x%lx", arg);
-				else
-					printf(", ??");
-			}
-			if (arg_count > 3) {
-				if (pstack_get_arg3(&c, &arg))
-					printf(", 0x%lx", arg);
-				else
-					printf(", ??");
-			}
-			if (arg_count > 4) {
-				if (pstack_get_arg4(&c, &arg))
-					printf(", 0x%lx", arg);
-				else
-					printf(", ??");
-			}
-			if (arg_count > 5) {
-				if (pstack_get_arg5(&c, &arg))
-					printf(", 0x%lx", arg);
-				else
-					printf(", ??");
+					printf("??");
 			}
 			printf(")");
 		}
@@ -173,7 +147,7 @@ backtrace_lwp(unw_addr_space_t as, void *ui, int pid, lwpid_t lwpid)
 			}
 			return;
 		}
-		n++;
+		frame_no++;
 	} while (ret > 0);
 }
 

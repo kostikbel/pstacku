@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <err.h>
 
 #include <libunwind.h>
@@ -5,94 +6,37 @@
 #include "pstack.h"
 
 int
-pstack_get_arg0(unw_cursor_t *c, unw_word_t *arg)
+pstack_get_arg(unw_addr_space_t as, void *ui, unw_cursor_t *c,
+    int index, unw_word_t *arg)
 {
-	int ret;
+	int reg, ret;
 
-	ret = unw_get_reg(c, UNW_X86_64_RDI, arg);
-	if (ret < 0) {
-		if (verbose) {
-			warnx("unw_get_reg(UNW_X86_64_RDI) failed, %s",
-			      unw_strerror(ret));
-		}
-		return (0);
+	switch (index) {
+	case 0:
+		reg = UNW_X86_64_RDI;
+		break;
+	case 1:
+		reg = UNW_X86_64_RSI;
+		break;
+	case 2:
+		reg = UNW_X86_64_RDX;
+		break;
+	case 3:
+		reg = UNW_X86_64_RCX;
+		break;
+	case 4:
+		reg = UNW_X86_64_R8;
+		break;
+	case 5:
+		reg = UNW_X86_64_R9;
+		break;
+	default:
+		assert(0);
 	}
-	return (1);
-}
-
-int
-pstack_get_arg1(unw_cursor_t *c, unw_word_t *arg)
-{
-	int ret;
-
-	ret = unw_get_reg(c, UNW_X86_64_RSI, arg);
+	ret = unw_get_reg(c, reg, arg);
 	if (ret < 0) {
 		if (verbose) {
-			warnx("unw_get_reg(UNW_X86_64_RSI) failed, %s",
-			      unw_strerror(ret));
-		}
-		return (0);
-	}
-	return (1);
-}
-
-int
-pstack_get_arg2(unw_cursor_t *c, unw_word_t *arg)
-{
-	int ret;
-
-	ret = unw_get_reg(c, UNW_X86_64_RDX, arg);
-	if (ret < 0) {
-		if (verbose) {
-			warnx("unw_get_reg(UNW_X86_64_RDX) failed, %s",
-			      unw_strerror(ret));
-		}
-		return (0);
-	}
-	return (1);
-}
-
-int
-pstack_get_arg3(unw_cursor_t *c, unw_word_t *arg)
-{
-	int ret;
-
-	ret = unw_get_reg(c, UNW_X86_64_RCX, arg);
-	if (ret < 0) {
-		if (verbose) {
-			warnx("unw_get_reg(UNW_X86_64_RCX) failed, %s",
-			      unw_strerror(ret));
-		}
-		return (0);
-	}
-	return (1);
-}
-
-int
-pstack_get_arg4(unw_cursor_t *c, unw_word_t *arg)
-{
-	int ret;
-
-	ret = unw_get_reg(c, UNW_X86_64_R8, arg);
-	if (ret < 0) {
-		if (verbose) {
-			warnx("unw_get_reg(UNW_X86_64_R8) failed, %s",
-			      unw_strerror(ret));
-		}
-		return (0);
-	}
-	return (1);
-}
-
-int
-pstack_get_arg5(unw_cursor_t *c, unw_word_t *arg)
-{
-	int ret;
-
-	ret = unw_get_reg(c, UNW_X86_64_R9, arg);
-	if (ret < 0) {
-		if (verbose) {
-			warnx("unw_get_reg(UNW_X86_64_R9) failed, %s",
+			warnx("unw_get_reg(%d) failed, %s", reg,
 			      unw_strerror(ret));
 		}
 		return (0);
