@@ -14,15 +14,18 @@
 #include <libunwind.h>
 #include <libunwind-ptrace.h>
 
+#include "pstack.h"
+
 #ifndef KERN_PROC_OSREL
 #define	KERN_PROC_OSREL	40
 #endif
 
+static int arg_count = 0;
 static int frame_count = -1;
 static int show_obj;
 static int show_obj_full;
 static int show_susp_time;
-static int verbose;
+int verbose;
 
 static int
 get_obj_path(int pid, unw_word_t ip, char *buf, size_t bufsize)
@@ -59,7 +62,7 @@ backtrace_lwp(unw_addr_space_t as, void *ui, int pid, lwpid_t lwpid)
 	char buf[PATH_MAX];
 	char *p;
 	unw_cursor_t c;
-	unw_word_t ip, sp, start_ip, off;
+	unw_word_t arg, ip, start_ip, off;
 	size_t len;
 	int n, ret;
 
@@ -87,15 +90,6 @@ backtrace_lwp(unw_addr_space_t as, void *ui, int pid, lwpid_t lwpid)
 			}
 			return;
 		}
-		ret = unw_get_reg(&c, UNW_REG_SP, &sp);
-		if (ret < 0) {
-			if (verbose) {
-				warnx("unw_get_reg(UNW_REG_SP) failed, %s",
-				    unw_strerror(ret));
-			}
-			return;
-		}
-
 		if (n == 0)
 			start_ip = ip;
 
@@ -112,7 +106,7 @@ backtrace_lwp(unw_addr_space_t as, void *ui, int pid, lwpid_t lwpid)
 			snprintf(buf + len, sizeof(buf) - len, "+0x%lx",
 			    (unsigned long)off);
 		}
-		printf (" 0x%0lx %s (sp=0x%0lx)", (long)ip, buf, (long)sp);
+		printf (" 0x%0lx %s", (long)ip, buf);
 		if (show_obj || show_obj_full) {
 			if (!get_obj_path(pid, ip, buf, sizeof(buf)))
 				strcpy(buf, "????????");
@@ -126,6 +120,44 @@ backtrace_lwp(unw_addr_space_t as, void *ui, int pid, lwpid_t lwpid)
 					p++;
 			}
 			printf(" in %s", p);
+		}
+		if (arg_count > 0) {
+			printf("(");
+			if (pstack_get_arg0(&c, &arg))
+				printf("0x%lx", arg);
+			else
+				printf("??");
+			if (arg_count > 1) {
+				if (pstack_get_arg1(&c, &arg))
+					printf(", 0x%lx", arg);
+				else
+					printf(", ??");
+			}
+			if (arg_count > 2) {
+				if (pstack_get_arg2(&c, &arg))
+					printf(", 0x%lx", arg);
+				else
+					printf(", ??");
+			}
+			if (arg_count > 3) {
+				if (pstack_get_arg3(&c, &arg))
+					printf(", 0x%lx", arg);
+				else
+					printf(", ??");
+			}
+			if (arg_count > 4) {
+				if (pstack_get_arg4(&c, &arg))
+					printf(", 0x%lx", arg);
+				else
+					printf(", ??");
+			}
+			if (arg_count > 5) {
+				if (pstack_get_arg5(&c, &arg))
+					printf(", 0x%lx", arg);
+				else
+					printf(", ??");
+			}
+			printf(")");
 		}
 		printf("\n");
 
@@ -233,7 +265,8 @@ static void
 usage(void)
 {
 
-	errx(2, "usage: pstack [-f frame_count] [-o] [-O] [-t] [-v] pid");
+	errx(2,
+"usage: pstack [-a arg_count] [-f frame_count] [-o] [-O] [-t] [-v] pid");
 }
 
 int
@@ -241,8 +274,11 @@ main(int argc, char **argv)
 {
 	int c, target_pid;
 
-	while ((c = getopt(argc, argv, "f:oOt")) != -1) {
+	while ((c = getopt(argc, argv, "a:f:oOt")) != -1) {
 		switch (c) {
+		case 'a':
+			arg_count = atoi(optarg);
+			break;
 		case 'f':
 			frame_count = atoi(optarg);
 			break;
