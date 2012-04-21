@@ -20,7 +20,7 @@
 #define	KERN_PROC_OSREL	40
 #endif
 
-static int arg_count = 0;
+static int arg_count;
 static int frame_count = -1;
 static int show_obj;
 static int show_obj_full;
@@ -252,6 +252,9 @@ main(int argc, char **argv)
 		switch (c) {
 		case 'a':
 			arg_count = atoi(optarg);
+			if (arg_count < 0 || arg_count > 6)
+				errx(1,
+				    "Argument count should be between 0 and 6");
 			break;
 		case 'f':
 			frame_count = atoi(optarg);
