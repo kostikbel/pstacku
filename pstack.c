@@ -18,10 +18,45 @@
 #define	KERN_PROC_OSREL	40
 #endif
 
-static void
-backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
+static int show_obj;
+static int show_obj_full;
+static int show_susp_time;
+static int verbose;
+
+static int
+get_obj_path(int pid, unw_word_t ip, char *buf, size_t bufsize)
 {
-	char buf[512];
+	struct ptrace_vm_entry pve;
+	int error, first, ts;
+
+restart:
+	bzero(&pve, sizeof(pve));
+	for (first = 1; ; first = 0) {
+		pve.pve_path = buf;
+		pve.pve_pathlen = bufsize;
+	
+		error = ptrace(PT_VM_ENTRY, pid, (caddr_t)&pve, 0);
+		if (error == -1) {
+			if (errno == ENOENT)
+				return (0);
+			if (verbose)
+				warn("ptrace PT_VM_ENTRY");
+			return (0);
+		}
+		if (first)
+			ts = pve.pve_timestamp;
+		else if (ts != pve.pve_timestamp)
+			     goto restart;
+		if (pve.pve_start <= ip && pve.pve_end >= ip)
+			return (1);
+	}
+}
+
+static void
+backtrace_lwp(unw_addr_space_t as, void *ui, int pid, lwpid_t lwpid)
+{
+	char buf[PATH_MAX];
+	char *p;
 	unw_cursor_t c;
 	unw_word_t ip, sp, start_ip, off;
 	size_t len;
@@ -30,7 +65,10 @@ backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
 	printf("Thread %d:\n", lwpid);
 	ret = unw_init_remote(&c, as, ui);
 	if (ret < 0) {
-		warnx("unw_init_remote() failed, %s", unw_strerror(ret));
+		if (verbose) {
+			warnx("unw_init_remote() failed, %s",
+			    unw_strerror(ret));
+		}
 		return;
 	}
 
@@ -39,14 +77,18 @@ backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
 	do {
 		ret = unw_get_reg(&c, UNW_REG_IP, &ip);
 		if (ret < 0) {
-			warnx("unw_get_reg(UNW_REG_IP) failed, %s",
-			    unw_strerror(ret));
+			if (verbose) {
+				warnx("unw_get_reg(UNW_REG_IP) failed, %s",
+				    unw_strerror(ret));
+			}
 			return;
 		}
 		ret = unw_get_reg(&c, UNW_REG_SP, &sp);
 		if (ret < 0) {
-			warnx("unw_get_reg(UNW_REG_SP) failed, %s",
-			    unw_strerror(ret));
+			if (verbose) {
+				warnx("unw_get_reg(UNW_REG_SP) failed, %s",
+				    unw_strerror(ret));
+			}
 			return;
 		}
 
@@ -66,16 +108,33 @@ backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
 			snprintf(buf + len, sizeof(buf) - len, "+0x%lx",
 			    (unsigned long)off);
 		}
-		printf (" 0x%0lx %s (sp=0x%0lx)\n", (long)ip, buf, (long)sp);
+		printf (" 0x%0lx %s (sp=0x%0lx)", (long)ip, buf, (long)sp);
+		if (show_obj || show_obj_full) {
+			if (!get_obj_path(pid, ip, buf, sizeof(buf)))
+				strcpy(buf, "????????");
+			if (show_obj_full)
+				p = buf;
+			else {
+				p = strrchr(buf, '/');
+				if (p == NULL)
+					p = buf;
+				else
+					p++;
+			}
+			printf(" in %s", p);
+		}
+		printf("\n");
 
 		ret = unw_step(&c);
 		if (ret < 0) {
 			unw_get_reg(&c, UNW_REG_IP, &ip);
 			if (ip == 0)
 				break;
-			warnx(
-			    "unw_step() error for ip %0lx/start ip %0lx, %s",
-			    (long)ip, (long)start_ip, unw_strerror(ret));
+			if (verbose) {
+				warnx(
+		    "unw_step() error for ip %0lx/start ip %0lx, %s",
+		    (long)ip, (long)start_ip, unw_strerror(ret));
+			}
 			return;
 		}
 		n++;
@@ -158,7 +217,7 @@ backtrace_proc(pid_t pid)
 
 	for (i = 0; i < lwpnums; i++) {
 		ui = _UPT_create(lwpids[i]);
-		backtrace_lwp(as, ui, lwpids[i]);
+		backtrace_lwp(as, ui, pid, lwpids[i]);
 		_UPT_destroy(ui);
 	}
 
@@ -170,18 +229,41 @@ static void
 usage(void)
 {
 
-	/* XXXKIB */
-	exit(2);
+	errx(2, "usage: pstack [-o] [-O] [-t] [-v] pid");
 }
 
 int
 main(int argc, char **argv)
 {
-	int target_pid;
+	int c, target_pid;
 
-	if (argc < 2)
+	while ((c = getopt(argc, argv, "oOt")) != -1) {
+		switch (c) {
+		case 'o':
+			show_obj = 1;
+			show_obj_full = 0;
+			break;
+		case 'O':
+			show_obj = 0;
+			show_obj_full = 1;
+			break;
+		case 't':
+			show_susp_time = 1;
+			break;
+		case 'v':
+			verbose = 1;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
+	if (argc < 1)
 		usage();
-	target_pid = atoi(argv[1]);
+	target_pid = atoi(argv[0]);
 	if (target_pid == 0) {
 		/* XXXKIB core support */
 		usage();
