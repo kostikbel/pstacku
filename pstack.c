@@ -29,19 +29,26 @@ backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
 
 	printf("Thread %d:\n", lwpid);
 	ret = unw_init_remote(&c, as, ui);
-	if (ret < 0)
-		errx(1, "unw_init_remote() failed, %s", unw_strerror(ret));
+	if (ret < 0) {
+		warnx("unw_init_remote() failed, %s", unw_strerror(ret));
+		return;
+	}
 
 	n = 0;
+	start_ip = 0; /* shut down compiler */
 	do {
 		ret = unw_get_reg(&c, UNW_REG_IP, &ip);
-		if (ret < 0)
-			errx(1, "unw_get_reg(UNW_REG_IP) failed, %s",
+		if (ret < 0) {
+			warnx("unw_get_reg(UNW_REG_IP) failed, %s",
 			    unw_strerror(ret));
+			return;
+		}
 		ret = unw_get_reg(&c, UNW_REG_SP, &sp);
-		if (ret < 0)
-			errx(1, "unw_get_reg(UNW_REG_SP) failed, %s",
+		if (ret < 0) {
+			warnx("unw_get_reg(UNW_REG_SP) failed, %s",
 			    unw_strerror(ret));
+			return;
+		}
 
 		if (n == 0)
 			start_ip = ip;
@@ -64,9 +71,10 @@ backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
 		ret = unw_step(&c);
 		if (ret < 0) {
 			unw_get_reg(&c, UNW_REG_IP, &ip);
-			errx(1,
+			warnx(
 			    "unw_step() error for ip %0lx/start ip %0lx, %s",
 			    (long)ip, (long)start_ip, unw_strerror(ret));
+			return;
 		}
 		n++;
 	} while (ret > 0);
