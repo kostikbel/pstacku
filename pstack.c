@@ -71,6 +71,8 @@ backtrace_lwp(unw_addr_space_t as, void *ui, lwpid_t lwpid)
 		ret = unw_step(&c);
 		if (ret < 0) {
 			unw_get_reg(&c, UNW_REG_IP, &ip);
+			if (ip == 0)
+				break;
 			warnx(
 			    "unw_step() error for ip %0lx/start ip %0lx, %s",
 			    (long)ip, (long)start_ip, unw_strerror(ret));
