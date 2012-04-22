@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include <libunwind.h>
@@ -20,12 +21,23 @@
 #define	KERN_PROC_OSREL	40
 #endif
 
+#define timespecsub(vvp, uvp)						\
+	do {								\
+		(vvp)->tv_sec -= (uvp)->tv_sec;				\
+		(vvp)->tv_nsec -= (uvp)->tv_nsec;			\
+		if ((vvp)->tv_nsec < 0) {				\
+			(vvp)->tv_sec--;				\
+			(vvp)->tv_nsec += 1000000000;			\
+		}							\
+	} while (0)
+
 static int arg_count;
 static int frame_count = -1;
 static int show_obj;
 static int show_obj_full;
 static int show_susp_time;
 int verbose;
+static struct timespec susp_start, susp_end;
 
 static int
 get_obj_path(int pid, unw_word_t ip, char *buf, size_t bufsize)
@@ -179,6 +191,15 @@ pid_proc_info(pid_t pid)
 }
 
 static void
+detach(pid_t pid)
+{
+
+	ptrace(PT_DETACH, pid, (caddr_t)1, 0);
+	if (show_susp_time)
+		clock_gettime(CLOCK_REALTIME_PRECISE, &susp_end);
+}
+
+static void
 backtrace_proc(pid_t pid)
 {
 	lwpid_t *lwpids;
@@ -186,6 +207,8 @@ backtrace_proc(pid_t pid)
 	struct UPT_info *ui;
 	int error, i, lwpnums, status;
 
+	if (show_susp_time)
+		clock_gettime(CLOCK_REALTIME_PRECISE, &susp_start);
 	error = ptrace(PT_ATTACH, pid, NULL, 0);
 	if (error == -1)
 		err(1, "Error attaching to pid %d", pid);
@@ -199,21 +222,21 @@ backtrace_proc(pid_t pid)
 	error = ptrace(PT_GETNUMLWPS, pid, NULL, 0);
 	if (error == -1) {
 		error = errno;
-		ptrace(PT_DETACH, pid, (caddr_t)1, 0);
+		detach(pid);
 		errc(1, error, "Error getting the number of lwps");
 	}
 	lwpnums = error;
 	lwpids = calloc(lwpnums, sizeof(lwpid_t));
 	if (lwpids == NULL) {
 		error = errno;
-		ptrace(PT_DETACH, pid, (caddr_t)1, 0);
+		detach(pid);
 		errc(1, error, "Error getting the number of lwps");
 	}
 	error = ptrace(PT_GETLWPLIST, pid, (caddr_t)lwpids, lwpnums *
 	    sizeof(lwpid_t));
 	if (error == -1) {
 		error = errno;
-		ptrace(PT_DETACH, pid, (caddr_t)1, 0);
+		detach(pid);
 		errc(1, error, "Error getting the lwp list");
 	}
 	assert(lwpnums == error);
@@ -221,7 +244,7 @@ backtrace_proc(pid_t pid)
 	
 	as = unw_create_addr_space(&_UPT_accessors, 0);
 	if (as == NULL) {
-		ptrace(PT_DETACH, pid, (caddr_t)1, 0);
+		detach(pid);
 		errx(1, "unw_create_addr_space() failed");
 	}
 
@@ -232,7 +255,7 @@ backtrace_proc(pid_t pid)
 	}
 
 	unw_destroy_addr_space(as);
-	ptrace(PT_DETACH, pid, (caddr_t)1, 0);
+	detach(pid);
 }
 
 static void
@@ -290,5 +313,10 @@ main(int argc, char **argv)
 	}
 
 	backtrace_proc(target_pid);
+	if (show_susp_time) {
+		timespecsub(&susp_end, &susp_start);
+		printf("Target was suspended for %f sec\n",
+		    (double)susp_end.tv_sec + susp_end.tv_nsec / 1000000000.);
+	}
 	return (0);
 }
