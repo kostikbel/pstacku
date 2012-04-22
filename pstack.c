@@ -281,7 +281,7 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc < 1)
+	if (argc != 1)
 		usage();
 	target_pid = atoi(argv[0]);
 	if (target_pid == 0) {
