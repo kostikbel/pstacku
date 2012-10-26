@@ -247,7 +247,7 @@ pstack_mode(pid_t pid)
 }
 
 struct dso_descr {
-	const char *path;
+	char *path;
 	unsigned long base;
 	struct dso_descr *next;
 };
