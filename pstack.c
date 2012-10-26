@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <sys/mman.h>
 #include <sys/ptrace.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
@@ -298,7 +299,8 @@ restart:
 			clear_dsos(dsos);
 			goto restart;
 		}
-		if (pve.pve_path[0] != 0 && (tail == NULL ||
+		if (pve.pve_path[0] != 0 &&
+		    pve.pve_prot == (PROT_READ | PROT_EXEC) && (tail == NULL ||
 		    strcmp(tail->path, pve.pve_path) != 0)) {
 			dso = calloc(1, sizeof(struct dso_descr));
 			if (dso == NULL)
