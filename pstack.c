@@ -33,6 +33,7 @@
 
 static int arg_count;
 static int frame_count = -1;
+static int pldd;
 static int show_obj;
 static int show_obj_full;
 static int show_susp_time;
@@ -50,7 +51,7 @@ restart:
 	for (first = 1; ; first = 0) {
 		pve.pve_path = buf;
 		pve.pve_pathlen = bufsize;
-	
+
 		error = ptrace(PT_VM_ENTRY, pid, (caddr_t)&pve, 0);
 		if (error == -1) {
 			if (errno == ENOENT)
@@ -200,24 +201,12 @@ detach(pid_t pid)
 }
 
 static void
-backtrace_proc(pid_t pid)
+pstack_mode(pid_t pid)
 {
 	lwpid_t *lwpids;
 	unw_addr_space_t as;
 	struct UPT_info *ui;
-	int error, i, lwpnums, status;
-
-	if (show_susp_time)
-		clock_gettime(CLOCK_REALTIME_PRECISE, &susp_start);
-	error = ptrace(PT_ATTACH, pid, NULL, 0);
-	if (error == -1)
-		err(1, "Error attaching to pid %d", pid);
-	error = waitpid(pid, &status, WSTOPPED);
-	if (error == -1)
-		err(1, "Error waiting for attach to pid %d", pid);
-	assert(error == pid);
-
-	pid_proc_info(pid);
+	int error, i, lwpnums;
 
 	error = ptrace(PT_GETNUMLWPS, pid, NULL, 0);
 	if (error == -1) {
@@ -241,7 +230,7 @@ backtrace_proc(pid_t pid)
 	}
 	assert(lwpnums == error);
 	lwpnums = error;
-	
+
 	as = unw_create_addr_space(&_UPT_accessors, 0);
 	if (as == NULL) {
 		detach(pid);
@@ -255,6 +244,104 @@ backtrace_proc(pid_t pid)
 	}
 
 	unw_destroy_addr_space(as);
+}
+
+struct dso_descr {
+	const char *path;
+	unsigned long base;
+	struct dso_descr *next;
+};
+
+static void
+clear_dsos(struct dso_descr *dsos)
+{
+	struct dso_descr *dso;
+
+	while (dsos != NULL) {
+		dso = dsos;
+		dsos = dso->next;
+		free(dso->path);
+		free(dso);
+	}
+}
+
+static void
+pldd_mode(pid_t pid)
+{
+	struct ptrace_vm_entry pve;
+	struct dso_descr *dsos, *dso, *tail;
+	int error, first, ts;
+
+	dsos = tail = NULL;
+restart:
+	bzero(&pve, sizeof(pve));
+	for (first = 1; ; first = 0) {
+		pve.pve_path = malloc(PATH_MAX);
+		pve.pve_path[0] = '\0';
+		pve.pve_pathlen = PATH_MAX;
+
+		error = ptrace(PT_VM_ENTRY, pid, (caddr_t)&pve, 0);
+		if (error == -1) {
+			if (errno == ENOENT) {
+				free(pve.pve_path);
+				break;
+			}
+			if (verbose)
+				warn("ptrace PT_VM_ENTRY");
+			free(pve.pve_path);
+			break;
+		}
+		if (first)
+			ts = pve.pve_timestamp;
+		else if (ts != pve.pve_timestamp) {
+			free(pve.pve_path);
+			clear_dsos(dsos);
+			goto restart;
+		}
+		if (pve.pve_path[0] != 0 && (tail == NULL ||
+		    strcmp(tail->path, pve.pve_path) != 0)) {
+			dso = calloc(1, sizeof(struct dso_descr));
+			if (dso == NULL)
+				err(1, "Cannot allocate memory");
+			dso->path = pve.pve_path;
+			if (dso->path == NULL)
+				err(1, "Cannot allocate memory");
+			dso->base = pve.pve_start;
+			if (tail == NULL)
+				dsos = tail = dso;
+			else {
+				tail->next = dso;
+				tail = dso;
+			}
+		} else
+			free(pve.pve_path);
+	}
+	for (dso = dsos; dso != NULL; dso = dso->next)
+		printf("\t%s (0x%lx)\n", dso->path, dso->base);
+	clear_dsos(dsos);
+}
+
+static void
+backtrace_proc(pid_t pid)
+{
+	int error, status;
+
+	if (show_susp_time)
+		clock_gettime(CLOCK_REALTIME_PRECISE, &susp_start);
+	error = ptrace(PT_ATTACH, pid, NULL, 0);
+	if (error == -1)
+		err(1, "Error attaching to pid %d", pid);
+	error = waitpid(pid, &status, WSTOPPED);
+	if (error == -1)
+		err(1, "Error waiting for attach to pid %d", pid);
+	assert(error == pid);
+
+	pid_proc_info(pid);
+
+	if (pldd)
+		pldd_mode(pid);
+	else
+		pstack_mode(pid);
 	detach(pid);
 }
 
@@ -263,7 +350,7 @@ usage(void)
 {
 
 	errx(2,
-"usage: pstack [-a arg_count] [-f frame_count] [-o] [-O] [-t] [-v] pid");
+"usage: pstack [-a arg_count] [-f frame_count] [-l] [-o] [-O] [-t] [-v] pid");
 }
 
 int
@@ -271,7 +358,7 @@ main(int argc, char **argv)
 {
 	int c, target_pid;
 
-	while ((c = getopt(argc, argv, "a:f:oOt")) != -1) {
+	while ((c = getopt(argc, argv, "a:f:loOt")) != -1) {
 		switch (c) {
 		case 'a':
 			arg_count = atoi(optarg);
@@ -281,6 +368,9 @@ main(int argc, char **argv)
 			break;
 		case 'f':
 			frame_count = atoi(optarg);
+			break;
+		case 'l':
+			pldd = 1;
 			break;
 		case 'o':
 			show_obj = 1;
