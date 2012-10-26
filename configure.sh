@@ -1,6 +1,6 @@
 #!/usr/local/bin/bash
 
-CC=/usr/local/opt/gcc-4.7.0/bin/gcc; export CC
+CC=/usr/local/opt/gcc-4.7.2/bin/gcc; export CC
 CFLAGS="-Wall -Wextra -O -g"; export CFLAGS
 
 case $(sysctl -n hw.machine) in
