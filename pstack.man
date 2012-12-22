@@ -1,0 +1,88 @@
+.\"-
+.\" Copyright (c) 2012 Konstantin Belousov <kib@FreeBSD.org>
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+.\" IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+.\" NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+.\" DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+.\" THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+.\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+.\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\"
+.Dd December 21, 2012
+.Dt PSTACK 1
+.Os
+.Sh
+.Nm pstack
+.Nd print the backtrace of the running program
+.Sh SYNOPSIS
+.Nm
+.Op Fl loOtv
+.Op Fl a Ar "arg count"
+.Op Fl f Ar "frame count"
+.Ar pid
+.Sh DESCRIPTION
+XXX
+.Pp
+The following options are available:
+.Bl -tag -width indent
+.It Fl a Ar count
+Try to guess the arguments of each function appearing in the backtrace.
+Not more than
+.Ar count
+arguments are printed for each function.
+Ability to correctly read the argument values depends on the
+architecture and compiler optimization, and is generally impossible
+to do.
+.It Fl f Ar count
+For each thread, print not more than
+.Ar count
+frames in the backtrace.
+.It Fl l
+Instead of walking the stacks of the running threads, print the names
+of the shared objects loaded into the process address space.
+The output of the utility resembles the output of
+.Xr ldd 1
+command run on the binary.
+.It Fl o
+Shows the names of the objects which contain the location of the frame
+current instruction pointer.
+.It Fl O
+Same as
+.Fl o ,
+but displays the full path to the objects instead of only names.
+.It Fl t
+Measures and prints the time which the target process was suspended
+to walk the stack frames.
+.It Fl v
+Be verbose.
+.Sh SEE ALSO
+.Xr gdb 1 ,
+.Xr ldd 1 ,
+.Xr ptrace 2 ,
+.Xr libunwind 3 ,
+.Xr procfs 5
+.Sh AUTHORS
+The
+.Nm
+command is reimplemented by
+.An Konstantin Belousov
+to mimic the user interface of other similar
+.Nm
+utilities, using the
+.Nm libunwind
+library as the stack unwinding backend.
+.Sh BUGS
+XXX
