@@ -119,3 +119,6 @@ shared object are already deleted, since
 needs to read the symbols from the on-disk ELF image.
 This could typically occur if the binary or library is reinstalled,
 but the process uses older version of the binary with the same name.
+.Pp
+You cannot get a backtrace for the process, to which another debugger
+is currently attached.
