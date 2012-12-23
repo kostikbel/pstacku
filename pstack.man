@@ -136,6 +136,14 @@ only works on the processes executing ELF binaries.
 .Pp
 You cannot get a backtrace for the process, to which another debugger
 is currently attached.
+The
+.Xr ptrace 2
+debugging mechanism used to obtain the neccessary live process information
+causes some syscalls to return
+.Va EINTR
+errors on
+.Nm
+detach.
 .Pp
 The
 .Nm
