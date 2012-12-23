@@ -53,7 +53,7 @@ of the traced process, binary name as reported by the kernel,
 and the currently active
 .Va osrel
 version of the ABI for the process.
-After that, for each thread in the process, thread id is displayed,
+After that, for each thread in the process, the thread id is displayed,
 followed by the backtrace.
 .Pp
 The following options are available:
@@ -77,14 +77,14 @@ The output of the utility resembles the output of
 .Xr ldd 1
 command run on the binary.
 .It Fl o
-Shows the names of the objects which contain the location of the frame
+Show the names of the objects which contain the location of the frame
 current instruction pointer.
 .It Fl O
 Same as
 .Fl o ,
 but displays the full path to the objects instead of only names.
 .It Fl t
-Measures and prints the time which the target process was suspended
+Measure and print the time which the target process was suspended
 to walk the stack frames.
 .It Fl v
 Be verbose.
