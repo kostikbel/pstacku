@@ -29,34 +29,23 @@
 #include <libunwind.h>
 #include "pstack.h"
 
+static int reg_idx[] = {
+	UNW_X86_64_RDI,
+	UNW_X86_64_RSI,
+	UNW_X86_64_RDX,
+	UNW_X86_64_RCX,
+	UNW_X86_64_R8,
+	UNW_X86_64_R9
+};
+
 int
 pstack_get_arg(unw_addr_space_t as, void *ui, unw_cursor_t *c,
     int index, unw_word_t *arg)
 {
 	int reg, ret;
 
-	switch (index) {
-	case 0:
-		reg = UNW_X86_64_RDI;
-		break;
-	case 1:
-		reg = UNW_X86_64_RSI;
-		break;
-	case 2:
-		reg = UNW_X86_64_RDX;
-		break;
-	case 3:
-		reg = UNW_X86_64_RCX;
-		break;
-	case 4:
-		reg = UNW_X86_64_R8;
-		break;
-	case 5:
-		reg = UNW_X86_64_R9;
-		break;
-	default:
-		assert(0);
-	}
+	assert(index >= 0 && index < sizeof(reg_idx) / sizeof(reg_idx[0]));
+	reg = reg_idx[index];
 	ret = unw_get_reg(c, reg, arg);
 	if (ret < 0) {
 		if (verbose) {
