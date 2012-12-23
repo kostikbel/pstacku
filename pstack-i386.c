@@ -28,6 +28,27 @@
 #include <libunwind.h>
 #include "pstack.h"
 
+/*
+ * On i386, this function naively assumes that the frame layout is
+ * completely standard:
+ *
+ *   +----------------+
+ *   |     arg3       |
+ *   +----------------+
+ *   |     arg2       |
+ *   +----------------+
+ *   |     arg1       |
+ *   +----------------+
+ *   |     ret        |
+ *   +----------------+
+ *   |    prev %ebp   |
+ *   +----------------+  <--- %ebp
+ *
+ * Unfortunately, typical modern code has a gap between ret and
+ * previous %ebp due to the local stack alignment.  As a result, the
+ * arguments printed are shifted by the random amount, and looks like
+ * garbage.
+ */
 int
 pstack_get_arg(unw_addr_space_t as, void *ui, unw_cursor_t *c,
     int index, unw_word_t *arg)
