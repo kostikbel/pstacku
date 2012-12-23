@@ -24,7 +24,7 @@
 .Dd December 21, 2012
 .Dt PSTACK 1
 .Os
-.Sh
+.Sh NAME
 .Nm pstack
 .Nd print the backtrace of the running program
 .Sh SYNOPSIS
@@ -88,6 +88,7 @@ Measures and prints the time which the target process was suspended
 to walk the stack frames.
 .It Fl v
 Be verbose.
+.El
 .Sh SEE ALSO
 .Xr gdb 1 ,
 .Xr ldd 1 ,
