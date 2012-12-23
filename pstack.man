@@ -38,13 +38,15 @@ The
 .Nm
 utility prints the stack backtraces for the running program.
 The
-.Nm attaches to the traced process using the
+.Nm
+attaches to the traced process using the
 .Fn ptrace 2
 debugging interface.
 If possible, the symbolic name and offset for the function executing in
 each frame is displayed.
 The
-.Nm can be directed to print the shared object name, containing
+.Nm
+can be directed to print the shared object name, containing
 the function as well.
 .Pp
 The first line of the output displays the
