@@ -102,10 +102,14 @@ command is reimplemented by
 .An Konstantin Belousov
 to mimic the user interface of other similar
 .Nm
-utilities, using the
+utilities, in particular, the
+.Nm
+written by
+.An Peter Edwards .
+This version relies on the
 .Nm libunwind
 library as the stack unwinding backend.
-.Sh BUGS
+.Sh CAVEATS
 On i386, the argument printing code assumes that the frame layout is
 standard, which is currently often not the case due to the padding
 added between return address and previous frame pointer, inserted by
@@ -120,5 +124,18 @@ needs to read the symbols from the on-disk ELF image.
 This could typically occur if the binary or library is reinstalled,
 but the process uses older version of the binary with the same name.
 .Pp
+The
+.Nm
+only works on the processes executing ELF binaries.
+.Pp
 You cannot get a backtrace for the process, to which another debugger
 is currently attached.
+.Pp
+The
+.Nm
+utility cannot yet extract a backtrace from the core dump.
+The architecture of the program and
+.Nm
+shall match (this is
+.Nm libunwind
+restriction).
