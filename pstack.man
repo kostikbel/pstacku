@@ -118,6 +118,10 @@ added between return address and previous frame pointer, inserted by
 compilers to align the stack.
 .Pp
 On amd64, the argument printing currently does not work.
+The amd64 ABI specifies that integer arguments are passed in the registers
+which are not required to be preserved across function calls.
+As the result, there is typically no way to re-create the arguments values
+on any frame except the current one.
 .Pp
 The symbol names cannot be inferred if the corresponding binary or
 shared object are already deleted, since
