@@ -34,7 +34,27 @@
 .Op Fl f Ar "frame count"
 .Ar pid
 .Sh DESCRIPTION
-XXX
+The
+.Nm
+utility prints the stack backtraces for the running program.
+The
+.Nm attaches to the traced process using the
+.Fn ptrace 2
+debugging interface.
+If possible, the symbolic name and offset for the function executing in
+each frame is displayed.
+The
+.Nm can be directed to print the shared object name, containing
+the function as well.
+.Pp
+The first line of the output displays the
+.Va pid
+of the traced process, binary name as reported by the kernel,
+and the currently active
+.Va osrel
+version of the ABI for the process.
+After that, for each thread in the process, thread id is displayed,
+followed by the backtrace.
 .Pp
 The following options are available:
 .Bl -tag -width indent
@@ -85,4 +105,9 @@ utilities, using the
 .Nm libunwind
 library as the stack unwinding backend.
 .Sh BUGS
-XXX
+On i386, the argument printing code assumes that the frame layout is
+standard, which is currently often not the case due to the padding
+added between return address and previous frame pointer, inserted by
+compilers to align the stack.
+.Pp
+On amd64, the argument printing currently does not work.
