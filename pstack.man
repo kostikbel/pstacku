@@ -21,7 +21,7 @@
 .\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 .\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .\"
-.Dd December 21, 2012
+.Dd June 17, 2014
 .Dt PSTACK 1
 .Os
 .Sh NAME
@@ -46,8 +46,8 @@ If possible, the symbolic name and offset for the function executing in
 each frame is displayed.
 The
 .Nm
-can be directed to print the shared object name, containing
-the function as well.
+can be directed to print the shared object name, which contains
+the function.
 .Pp
 The first line of the output displays the
 .Va pid
@@ -66,7 +66,7 @@ Not more than
 .Ar count
 arguments are printed for each function.
 Ability to correctly read the argument values depends on the
-architecture and compiler optimization, and is generally impossible
+architecture and compiler optimization, but it is generally impossible
 to do.
 .It Fl f Ar count
 For each thread, print not more than
@@ -114,7 +114,7 @@ library as the stack unwinding backend.
 .Sh CAVEATS
 On i386, the argument printing code assumes that the frame layout is
 standard, which is currently often not the case due to the padding
-added between return address and previous frame pointer, inserted by
+added between return address and previous frame pointer, as done by
 compilers to align the stack.
 .Pp
 On amd64, the argument printing currently does not work.
@@ -148,6 +148,7 @@ detach.
 The
 .Nm
 utility cannot yet extract a backtrace from the core dump.
+.Pp
 The architecture of the program and
 .Nm
 shall match (this is
