@@ -34,4 +34,5 @@ pstack_DEPENDENCIES = @ARCH_OBJ@
 pstack_LDADD = @ARCH_OBJ@
 
 AM_CPPFLAGS = -I @LIBUNWIND@/include
+AM_CFLAGS = -std=c99
 pstack_LDADD += -L@LIBUNWIND@/lib -lunwind -lunwind-ptrace -lunwind-generic

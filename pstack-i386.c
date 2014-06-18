@@ -25,6 +25,7 @@
  */
 
 #include <err.h>
+#include <stdbool.h>
 #include <libunwind.h>
 #include "pstack.h"
 

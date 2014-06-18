@@ -33,6 +33,7 @@
 #include <assert.h>
 #include <err.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,11 +61,11 @@
 
 static int arg_count;
 static int frame_count = -1;
-static int pldd;
-static int show_obj;
-static int show_obj_full;
-static int show_susp_time;
-int verbose;
+static bool pldd;
+static bool show_obj;
+static bool show_obj_full;
+static bool show_susp_time;
+bool verbose;
 static struct timespec susp_start, susp_end;
 
 static int
@@ -398,21 +399,21 @@ main(int argc, char **argv)
 			frame_count = atoi(optarg);
 			break;
 		case 'l':
-			pldd = 1;
+			pldd = true;
 			break;
 		case 'o':
-			show_obj = 1;
-			show_obj_full = 0;
+			show_obj = true;
+			show_obj_full = false;
 			break;
 		case 'O':
-			show_obj = 0;
-			show_obj_full = 1;
+			show_obj = false;
+			show_obj_full = true;
 			break;
 		case 't':
-			show_susp_time = 1;
+			show_susp_time = true;
 			break;
 		case 'v':
-			verbose = 1;
+			verbose = true;
 			break;
 		case '?':
 		default:
