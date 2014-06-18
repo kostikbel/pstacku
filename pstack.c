@@ -33,6 +33,7 @@
 #include <assert.h>
 #include <err.h>
 #include <errno.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -67,6 +68,8 @@ static bool show_obj_full;
 static bool show_susp_time;
 bool verbose;
 static struct timespec susp_start, susp_end;
+static bool attached;
+static pid_t attached_pid;
 
 static int
 get_obj_path(int pid, unw_word_t ip, char *buf, size_t bufsize)
@@ -357,6 +360,8 @@ backtrace_proc(pid_t pid)
 
 	if (show_susp_time)
 		clock_gettime(CLOCK_REALTIME_PRECISE, &susp_start);
+	attached = true;
+	attached_pid = pid;
 	error = ptrace(PT_ATTACH, pid, NULL, 0);
 	if (error == -1)
 		err(1, "Error attaching to pid %d", pid);
@@ -382,9 +387,28 @@ usage(void)
 "usage: pstack [-a arg_count] [-f frame_count] [-l] [-o] [-O] [-t] [-v] pid");
 }
 
+static void
+sighandler(int signo)
+{
+	static const char msg1[] = "Got SIG";
+	static const char msg2[] = ", detaching\n";
+	static const char msg_sig[] = "???";
+	const char *sig;
+
+	if (!attached)
+		return;
+	write(2, msg1, sizeof(msg1) - 1);
+	sig = signo < sys_nsig ? sys_signame[signo] : msg_sig;
+	write(2, sig, strlen(sig));
+	write(2, msg2, sizeof(msg2) - 1);
+	detach(attached_pid);
+	_exit(1);
+}
+
 int
 main(int argc, char **argv)
 {
+	struct sigaction sa;
 	int c, target_pid;
 
 	while ((c = getopt(argc, argv, "a:f:loOt")) != -1) {
@@ -430,6 +454,13 @@ main(int argc, char **argv)
 		/* XXXKIB core support */
 		usage();
 	}
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sighandler;
+	if (sigaction(SIGHUP, &sa, NULL) == -1 ||
+	    sigaction(SIGINT, &sa, NULL) == -1 ||
+	    sigaction(SIGTERM, &sa, NULL) == -1)
+		err(1, "sigaction");
 
 	backtrace_proc(target_pid);
 	if (show_susp_time) {
