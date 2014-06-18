@@ -27,7 +27,7 @@ ACLOCAL_AMFLAGS = -I m4
 bin_PROGRAMS = pstack
 
 pstack_SOURCES = pstack.c pstack.h
-dist_pstack_MANS = pstack.man
+dist_man_MANS = pstack.man
 
 EXTRA_pstack_SOURCES = pstack-i386.c pstack-amd64.c
 pstack_DEPENDENCIES = @ARCH_OBJ@
