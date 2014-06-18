@@ -29,6 +29,10 @@
 #include <libunwind.h>
 #include "pstack.h"
 
+#ifndef __unused
+#define	__unused	__attribute__((__unused__))
+#endif
+
 static int reg_idx[] = {
 	UNW_X86_64_RDI,
 	UNW_X86_64_RSI,
@@ -39,12 +43,13 @@ static int reg_idx[] = {
 };
 
 int
-pstack_get_arg(unw_addr_space_t as, void *ui, unw_cursor_t *c,
-    int index, unw_word_t *arg)
+pstack_get_arg(unw_addr_space_t as __unused, void *ui __unused,
+    unw_cursor_t *c, int index, unw_word_t *arg)
 {
 	int reg, ret;
 
-	assert(index >= 0 && index < sizeof(reg_idx) / sizeof(reg_idx[0]));
+	assert(index >= 0 && (unsigned)index < sizeof(reg_idx) /
+	    sizeof(reg_idx[0]));
 	reg = reg_idx[index];
 	ret = unw_get_reg(c, reg, arg);
 	if (ret < 0) {
