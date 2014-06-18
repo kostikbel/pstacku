@@ -68,7 +68,6 @@ static bool show_obj_full;
 static bool show_susp_time;
 bool verbose;
 static struct timespec susp_start, susp_end;
-static bool attached;
 static pid_t attached_pid;
 
 static int
@@ -227,6 +226,7 @@ detach(pid_t pid)
 {
 
 	ptrace(PT_DETACH, pid, (caddr_t)1, 0);
+	attached_pid = 0;
 	if (show_susp_time)
 		clock_gettime(CLOCK_REALTIME_PRECISE, &susp_end);
 }
@@ -360,7 +360,6 @@ backtrace_proc(pid_t pid)
 
 	if (show_susp_time)
 		clock_gettime(CLOCK_REALTIME_PRECISE, &susp_start);
-	attached = true;
 	attached_pid = pid;
 	error = ptrace(PT_ATTACH, pid, NULL, 0);
 	if (error == -1)
@@ -395,7 +394,7 @@ sighandler(int signo)
 	static const char msg_sig[] = "???";
 	const char *sig;
 
-	if (!attached)
+	if (attached_pid == 0)
 		return;
 	write(2, msg1, sizeof(msg1) - 1);
 	sig = signo < sys_nsig ? sys_signame[signo] : msg_sig;
