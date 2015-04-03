@@ -280,17 +280,16 @@ pstack_mode(pid_t pid)
 struct dso_descr {
 	char *path;
 	unsigned long base;
-	struct dso_descr *next;
+	STAILQ_ENTRY(dso_descr) link;
 };
+STAILQ_HEAD(dso_list, dso_descr);
 
 static void
-clear_dsos(struct dso_descr *dsos)
+clear_dsos(struct dso_list *dsos)
 {
-	struct dso_descr *dso;
+	struct dso_descr *dso, *tdso;
 
-	while (dsos != NULL) {
-		dso = dsos;
-		dsos = dso->next;
+	STAILQ_FOREACH_SAFE(dso, dsos, link, tdso) {
 		free(dso->path);
 		free(dso);
 	}
@@ -300,13 +299,15 @@ static void
 pldd_mode(pid_t pid)
 {
 	struct ptrace_vm_entry pve;
-	struct dso_descr *dsos, *dso, *tail;
-	int error, first, ts;
+	struct dso_list dsos;
+	struct dso_descr *dso;
+	int error, ts;
+	bool first;
 
-	dsos = tail = NULL;
+	STAILQ_INIT(&dsos);
 restart:
 	bzero(&pve, sizeof(pve));
-	for (first = 1; ; first = 0) {
+	for (first = true; ; first = false) {
 		pve.pve_path = malloc(PATH_MAX);
 		if (pve.pve_path == NULL)
 			err(1, "Cannot allocate memory");
@@ -324,33 +325,30 @@ restart:
 			free(pve.pve_path);
 			break;
 		}
-		if (first)
+		if (first) {
 			ts = pve.pve_timestamp;
-		else if (ts != pve.pve_timestamp) {
+		} else if (ts != pve.pve_timestamp) {
 			free(pve.pve_path);
-			clear_dsos(dsos);
+			clear_dsos(&dsos);
 			goto restart;
 		}
 		if (pve.pve_path[0] != 0 &&
-		    pve.pve_prot == (PROT_READ | PROT_EXEC) && (tail == NULL ||
-		    strcmp(tail->path, pve.pve_path) != 0)) {
+		    pve.pve_prot == (PROT_READ | PROT_EXEC) &&
+		    (STAILQ_EMPTY(&dsos) || strcmp(STAILQ_LAST(&dsos, dso_descr,
+		    link)->path, pve.pve_path) != 0)) {
 			dso = calloc(1, sizeof(struct dso_descr));
 			if (dso == NULL)
 				err(1, "Cannot allocate memory");
 			dso->path = pve.pve_path;
 			dso->base = pve.pve_start;
-			if (tail == NULL)
-				dsos = tail = dso;
-			else {
-				tail->next = dso;
-				tail = dso;
-			}
-		} else
+			STAILQ_INSERT_TAIL(&dsos, dso, link);
+		} else {
 			free(pve.pve_path);
+		}
 	}
-	for (dso = dsos; dso != NULL; dso = dso->next)
+	STAILQ_FOREACH(dso, &dsos, link)
 		printf("\t%s (0x%lx)\n", dso->path, dso->base);
-	clear_dsos(dsos);
+	clear_dsos(&dsos);
 }
 
 static void
