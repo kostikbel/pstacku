@@ -76,11 +76,12 @@ static int
 get_obj_path(int pid, unw_word_t ip, char *buf, size_t bufsize)
 {
 	struct ptrace_vm_entry pve;
-	int error, first, ts;
+	int error, ts;
+	boot first;
 
 restart:
 	bzero(&pve, sizeof(pve));
-	for (first = 1; ; first = 0) {
+	for (first = true; ; first = false) {
 		pve.pve_path = buf;
 		pve.pve_pathlen = bufsize;
 
@@ -95,7 +96,7 @@ restart:
 		if (first)
 			ts = pve.pve_timestamp;
 		else if (ts != pve.pve_timestamp)
-			     goto restart;
+			goto restart;
 		if (pve.pve_start <= ip && pve.pve_end >= ip)
 			return (1);
 	}
