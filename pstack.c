@@ -50,15 +50,17 @@
 #define	KERN_PROC_OSREL	40
 #endif
 
-#define timespecsub(vvp, uvp)						\
-	do {								\
-		(vvp)->tv_sec -= (uvp)->tv_sec;				\
-		(vvp)->tv_nsec -= (uvp)->tv_nsec;			\
-		if ((vvp)->tv_nsec < 0) {				\
-			(vvp)->tv_sec--;				\
-			(vvp)->tv_nsec += 1000000000;			\
-		}							\
-	} while (0)
+static void
+timespecsub(struct timespec *vvp, const struct timespec *uvp)
+{
+
+	vvp->tv_sec -= uvp->tv_sec;
+	vvp->tv_nsec -= uvp->tv_nsec;
+	if (vvp->tv_nsec < 0) {
+		vvp->tv_sec--;
+		vvp->tv_nsec += 1000000000;
+	}
+}
 
 static int arg_count;
 static int frame_count = -1;
