@@ -308,6 +308,8 @@ restart:
 	bzero(&pve, sizeof(pve));
 	for (first = 1; ; first = 0) {
 		pve.pve_path = malloc(PATH_MAX);
+		if (pve.pve_path == NULL)
+			err(1, "Cannot allocate memory");
 		pve.pve_path[0] = '\0';
 		pve.pve_pathlen = PATH_MAX;
 
@@ -336,8 +338,6 @@ restart:
 			if (dso == NULL)
 				err(1, "Cannot allocate memory");
 			dso->path = pve.pve_path;
-			if (dso->path == NULL)
-				err(1, "Cannot allocate memory");
 			dso->base = pve.pve_start;
 			if (tail == NULL)
 				dsos = tail = dso;
