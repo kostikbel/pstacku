@@ -77,7 +77,7 @@ get_obj_path(int pid, unw_word_t ip, char *buf, size_t bufsize)
 {
 	struct ptrace_vm_entry pve;
 	int error, ts;
-	boot first;
+	bool first;
 
 restart:
 	bzero(&pve, sizeof(pve));
