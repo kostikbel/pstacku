@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/ptrace.h>
+#include <sys/queue.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #include <sys/wait.h>
