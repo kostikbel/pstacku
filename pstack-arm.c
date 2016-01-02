@@ -49,7 +49,7 @@ pstack_get_arg(unw_addr_space_t as __unused, void *ui __unused,
 	int reg, ret;
 
 	assert(index >= 0);
-	if (index < < nitems(reg_idx)) {
+	if (index < nitems(reg_idx)) {
 		reg = reg_idx[index];
 		ret = unw_get_reg(c, reg, arg);
 		if (ret < 0) {
