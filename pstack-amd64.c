@@ -24,6 +24,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/param.h>
 #include <assert.h>
 #include <err.h>
 #include <stdbool.h>
@@ -32,6 +33,9 @@
 
 #ifndef __unused
 #define	__unused	__attribute__((__unused__))
+#endif
+#ifndef nitems
+#define	nitems(x)	(sizeof(x) / sizeof((x)[0]))
 #endif
 
 static int reg_idx[] = {
@@ -49,8 +53,7 @@ pstack_get_arg(unw_addr_space_t as __unused, void *ui __unused,
 {
 	int reg, ret;
 
-	assert(index >= 0 && (unsigned)index < sizeof(reg_idx) /
-	    sizeof(reg_idx[0]));
+	assert(index >= 0 && (unsigned)index < nitems(reg_idx));
 	reg = reg_idx[index];
 	ret = unw_get_reg(c, reg, arg);
 	if (ret < 0) {
