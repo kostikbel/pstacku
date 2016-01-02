@@ -27,6 +27,13 @@
 #ifndef	PSTACK_H
 #define	PSTACK_H
 
+#ifndef __unused
+#define	__unused	__attribute__((__unused__))
+#endif
+#ifndef nitems
+#define	nitems(x)	(sizeof(x) / sizeof((x)[0]))
+#endif
+
 extern bool verbose;
 
 int pstack_get_arg(unw_addr_space_t as, void *ui, unw_cursor_t *c,

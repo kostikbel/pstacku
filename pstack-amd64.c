@@ -31,13 +31,6 @@
 #include <libunwind.h>
 #include "pstack.h"
 
-#ifndef __unused
-#define	__unused	__attribute__((__unused__))
-#endif
-#ifndef nitems
-#define	nitems(x)	(sizeof(x) / sizeof((x)[0]))
-#endif
-
 static int reg_idx[] = {
 	UNW_X86_64_RDI,
 	UNW_X86_64_RSI,
