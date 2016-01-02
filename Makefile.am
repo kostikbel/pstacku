@@ -29,7 +29,7 @@ bin_PROGRAMS = pstack
 pstack_SOURCES = pstack.c pstack.h
 dist_man1_MANS = pstack.man
 
-EXTRA_pstack_SOURCES = pstack-i386.c pstack-amd64.c
+EXTRA_pstack_SOURCES = pstack-i386.c pstack-amd64.c pstack-arm.c
 pstack_DEPENDENCIES = @ARCH_OBJ@
 pstack_LDADD = @ARCH_OBJ@
 
