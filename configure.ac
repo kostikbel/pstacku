@@ -48,6 +48,7 @@ AS_CASE([$host],
 	[amd64-*-*], [ARCH_OBJ=pstack-amd64.$OBJEXT],
 	[i?86-*-*],   [ARCH_OBJ=pstack-i386.$OBJEXT],
 	[arm-*-*],   [ARCH_OBJ=pstack-arm.$OBJEXT],
+	[armv6-*-*],   [ARCH_OBJ=pstack-arm.$OBJEXT],
 	[ARCH_OBJ=""]
 )
 AC_SUBST([ARCH_OBJ])
