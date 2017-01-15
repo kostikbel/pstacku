@@ -412,7 +412,7 @@ main(int argc, char **argv)
 	struct sigaction sa;
 	int c, target_pid;
 
-	while ((c = getopt(argc, argv, "a:f:loOt")) != -1) {
+	while ((c = getopt(argc, argv, "a:f:loOtv")) != -1) {
 		switch (c) {
 		case 'a':
 			arg_count = atoi(optarg);
