@@ -22,8 +22,8 @@ dnl THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 dnl (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 dnl THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-AC_INIT(pstacku, 0.10.0, kib@FreeBSD.org)
-AC_PREREQ([2.68])
+AC_INIT([pstacku],[0.10.0],[kib@FreeBSD.org])
+AC_PREREQ([2.72])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_HOST
 AM_INIT_AUTOMAKE([foreign])
@@ -33,13 +33,13 @@ AM_CONFIG_HEADER(config.h)
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
-AM_PROG_LIBTOOL
+LT_INIT
 
 AC_ARG_WITH([libunwind],
     [AS_HELP_STRING([--with-libunwind@<:@=DIR@:>@],
         [a directory where libunwind is installed @<:@default=/usr/local@:>@])],
     [with_libunwind="$withval"],
-    AC_ERROR([Cannot build without libunwind]))
+    AC_MSG_ERROR(Cannot build without libunwind))
 
 LIBUNWIND=$with_libunwind
 AC_SUBST([LIBUNWIND])
