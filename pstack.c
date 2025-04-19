@@ -52,7 +52,7 @@
 #endif
 
 static void
-timespecsub(struct timespec *vvp, const struct timespec *uvp)
+timespecsubx(struct timespec *vvp, const struct timespec *uvp)
 {
 
 	vvp->tv_sec -= uvp->tv_sec;
@@ -465,7 +465,7 @@ main(int argc, char **argv)
 
 	backtrace_proc(target_pid);
 	if (show_susp_time) {
-		timespecsub(&susp_end, &susp_start);
+		timespecsubx(&susp_end, &susp_start);
 		printf("Target was suspended for %f sec\n",
 		    (double)susp_end.tv_sec + susp_end.tv_nsec / 1000000000.);
 	}
