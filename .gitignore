@@ -10,3 +10,14 @@ depcomp
 install-sh
 ltmain.sh
 missing
+.deps/
+Makefile
+config.h
+config.log
+config.status
+configure~
+libtool
+pstack
+pstack-amd64.o
+pstack.o
+stamp-h1
